@@ -163,3 +163,4 @@ C:\Users\Incantation\source\repos\OMoviesRepo\OMovies\OMovies\obj\Debug\net5.0\R
 C:\Users\Incantation\source\repos\OMoviesRepo\OMovies\OMovies\obj\Debug\net5.0\Razor\Areas\Identity\Pages\_ViewImports.cshtml.g.cs
 C:\Users\Incantation\source\repos\OMoviesRepo\OMovies\OMovies\obj\Debug\net5.0\Razor\Views\Movie\TopRated.cshtml.g.cs
 C:\Users\Incantation\source\repos\OMoviesRepo\OMovies\OMovies\obj\Debug\net5.0\Razor\Views\Movie\Index.cshtml.g.cs
+C:\Users\Incantation\source\repos\OMoviesRepo\OMovies\OMovies\bin\Debug\net5.0\System.Text.Json.dll

@@ -1,7 +1,116 @@
-﻿
+﻿@model OMovies.ViewModels.PopularMoviesViewModel
+
 @{
     ViewData["Title"] = "Popular Movies";
+    <link rel="stylesheet" href="~/lib/datatables/dist/css/jquery.dataTables.css" />
+    <link rel="stylesheet" href="~/lib/pagination/dist/css/bs-pagination.min.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous">
+
+    <style>
+        .sortable-header{
+            cursor: pointer;    
+        }
+    </style>
 }
 
 <h1>Popular Movies</h1>
 
+<table id="movies" class="table table-hover">
+    <thead>
+        <tr>
+            <th><span class="sortable-header">Title <i class="fas fa-sort sorting-arrows"></i></span></th>
+            <th><span class="sortable-header">Original Title <i class="fas fa-sort sorting-arrows"></i></span></th>
+            <th><span class="sortable-header">Release Date <i class="fas fa-sort sorting-arrows"></i></span></th>
+            <th><span class="sortable-header">Vote Average <i class="fas fa-sort sorting-arrows"></i></span></th>
+            <th><span class="sortable-header">Vote Count <i class="fas fa-sort sorting-arrows"></i></span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var movie in Model.Movies)
+        {
+            <tr>
+                <td>@movie.Title</td>
+                <td>@movie.OriginalTitle</td>
+                <td>@movie.ReleaseDateString</td>
+                <td>@movie.VoteAverage</td>
+                <td>@movie.VoteCount</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="row justify-content-center">
+    <ul class="pagination"></ul>
+
+</div>
+
+@section Scripts{
+    <script src="~/lib/datatables/dist/js/datatables.min.js"></script>
+    <script src="~/lib/pagination/dist/js/pagination.min.js"></script>
+
+    <script>
+        var paginator;
+        $(function() {
+            paginator=$(".pagination").pagination({
+                size: 5,
+                total: @Model.TotalResults,
+                current: 1,
+                length: @Model.Movies.Count,
+                prev: '<i class="fas fa-chevron-circle-left"></i>',
+                next: '<i class="fas fa-chevron-circle-right"></i>',
+
+                click: function(e) {
+                    $.ajax({
+                        url: "/Movies/GetMovies",
+                        data: {
+                            page: e.current
+                        },
+                        //dataType: 'application/json',
+                        contentType: "application/json"
+                    }).done(function(result) {
+                        var tableBody = $("#movies").find("tbody");
+                        tableBody.find("tr").remove();
+
+                        result["results"].forEach(function(element) {
+                            tableBody.append(`<tr>
+                                <td>${element.title}</td>
+                                <td>${element.original_title}</td>
+                                <td>${element.releaseDateString}</td>
+                                <td>${element.vote_average}</td>
+                                <td>${element.vote_count}</td>
+                                </tr>`);
+                        });
+                    }).fail(function(error) {
+
+                    });
+                }
+            });
+
+            $(".sortable-header").click(function () {
+
+
+                $(".sorting-arrows").removeClass("fa-sort-up").removeClass("fa-sort-down").addClass("fa-sort");
+
+            })
+        });
+
+        function getMovies(page) {
+            $.ajax({
+                method: "GET",
+                url: `/Movies/GetMovies${(page ? `/page=${page}` : "")}`,
+                contentType: "data/json"
+            }).done(function(data) {
+
+                //moviesTable.rows().remove();
+
+                //data.results.forEach(function(movie) {
+                //    moviesTable.row.add([movie.title,movie.releaseDateString,movie.vote_average]);
+                //});
+
+            }).fail(function() {
+                alert("Change to toastr.");
+            });
+        }
+
+    </script>
+}

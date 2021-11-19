@@ -1,38 +1,44 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json;
+using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using OMovies.DTOs;
+using OMovies.Helpers;
 
 namespace OMovies.Api
 {
-    [Route("api/[controller]")]
+    [Route("[controller]/[action]")]
     [ApiController]
     public class MoviesController : ControllerBase
     {
+        private readonly RequestHelper _requestHelper;
+
+        public MoviesController(RequestHelper requestHelper)
+        {
+            _requestHelper = requestHelper;
+        }
         public async Task<IActionResult> GetMovies(int? page = null)
         {
-            List<MovieDto> dtos;
+            MoviesDto dto;
 
-            using (var client = new HttpClient())
+            try
             {
-                try
-                {
-                    var uri =
-                        $"https://api.themoviedb.org/3/movie/popular?api_key=dad8a59d86a2793dda93aa485f7339c1{(page != null ? $"&page={page}" : "")}";
-                    var response = await (await client.GetAsync(uri)).Content.ReadAsStringAsync();
+                dto = await _requestHelper.GetPopularMovies<MoviesDto>(page);
 
-                    dtos = JsonSerializer.Deserialize<List<MovieDto>>(response);
-                }
-                catch (Exception)
-                {
-                    return BadRequest("An unexpected error has occurred.");
-                }
+                dto.MoviesDateToString();
+            }
+            catch (Exception)
+            {
+                return BadRequest("An unexpected error has occurred.");
             }
 
-            return Ok(dtos);
+            return Ok(dto);
+        }
+
+        public async Task<IActionResult> GetMovie(int id)
+        {
+            return Ok();
         }
     }
 }
