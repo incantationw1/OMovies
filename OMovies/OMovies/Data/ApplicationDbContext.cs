@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using OMovies.Models;
 
 namespace OMovies.Data
 {
@@ -12,5 +10,7 @@ namespace OMovies.Data
             : base(options)
         {
         }
+
+        public DbSet<FavoriteMovie> FavoriteMovies { get; set; }
     }
 }

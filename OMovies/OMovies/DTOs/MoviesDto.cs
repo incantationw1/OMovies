@@ -4,7 +4,7 @@ using OMovies.Interfaces;
 
 namespace OMovies.DTOs
 {
-    public class MoviesDto:IMovies
+    public class MoviesDto : IMovies
     {
         [JsonPropertyName("results")]
         public List<MovieDto> Movies { get; set; }

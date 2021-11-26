@@ -1,36 +1,29 @@
-﻿@model OMovies.ViewModels.PopularMoviesViewModel
+﻿@model OMovies.ViewModels.MoviesViewModel
 
 @{
-    ViewData["Title"] = "Popular Movies";
+    ViewData["Title"] = Model.PageTitle;
     <link rel="stylesheet" href="~/lib/datatables/dist/css/jquery.dataTables.css" />
-    <link rel="stylesheet" href="~/lib/pagination/dist/css/bs-pagination.min.css" />
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous">
-
-    <style>
-        .sortable-header{
-            cursor: pointer;    
-        }
-    </style>
 }
 
 <h1>Popular Movies</h1>
 
-<table id="movies" class="table table-hover">
+<table id="movies" class="table table-hover" data-order="[]">
     <thead>
         <tr>
-            <th><span class="sortable-header">Title <i class="fas fa-sort sorting-arrows"></i></span></th>
-            <th><span class="sortable-header">Original Title <i class="fas fa-sort sorting-arrows"></i></span></th>
-            <th><span class="sortable-header">Release Date <i class="fas fa-sort sorting-arrows"></i></span></th>
-            <th><span class="sortable-header">Vote Average <i class="fas fa-sort sorting-arrows"></i></span></th>
-            <th><span class="sortable-header">Vote Count <i class="fas fa-sort sorting-arrows"></i></span></th>
+            <th>Title</th>
+            <th>Original Language</th>
+            <th>Release Date</th>
+            <th>Vote Average</th>
+            <th>Vote Count</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var movie in Model.Movies)
         {
             <tr>
-                <td>@movie.Title</td>
-                <td>@movie.OriginalTitle</td>
+                <td><a href="javascript:void(0)" class="movie" data-id="@movie.Id">@movie.Title</a></td>
+                <td>@movie.OriginalLanguage</td>
                 <td>@movie.ReleaseDateString</td>
                 <td>@movie.VoteAverage</td>
                 <td>@movie.VoteCount</td>
@@ -39,78 +32,103 @@
     </tbody>
 </table>
 
-<div class="row justify-content-center">
-    <ul class="pagination"></ul>
-
+<div id="movie-modal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <button id="add-favorite" class="btn d-none">
+                        <i class="far fa-heart not-hearted"></i>
+                    </button>
+                    <button id="remove-favorite" class="btn d-none">
+                        <i class="fas fa-heart hearted"></i>
+                    </button>
+                }
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row justify-content-center">
+                    <img id="movie-poster" src="" />
+                </div>
+                <br />
+                <strong>Original Title: </strong><span id="movie-original-title"></span>
+                <br />
+                <strong>Overview: </strong><span id="movie-overview"></span>
+                <br />
+                <strong>Vote Average: </strong><span id="movie-vote-average"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts{
     <script src="~/lib/datatables/dist/js/datatables.min.js"></script>
-    <script src="~/lib/pagination/dist/js/pagination.min.js"></script>
 
     <script>
-        var paginator;
-        $(function() {
-            paginator=$(".pagination").pagination({
-                size: 5,
-                total: @Model.TotalResults,
-                current: 1,
-                length: @Model.Movies.Count,
-                prev: '<i class="fas fa-chevron-circle-left"></i>',
-                next: '<i class="fas fa-chevron-circle-right"></i>',
+        var movieId;
 
-                click: function(e) {
-                    $.ajax({
-                        url: "/Movies/GetMovies",
-                        data: {
-                            page: e.current
-                        },
-                        //dataType: 'application/json',
-                        contentType: "application/json"
-                    }).done(function(result) {
-                        var tableBody = $("#movies").find("tbody");
-                        tableBody.find("tr").remove();
+        $(function () {
+            $('#movies').dataTable({});
 
-                        result["results"].forEach(function(element) {
-                            tableBody.append(`<tr>
-                                <td>${element.title}</td>
-                                <td>${element.original_title}</td>
-                                <td>${element.releaseDateString}</td>
-                                <td>${element.vote_average}</td>
-                                <td>${element.vote_count}</td>
-                                </tr>`);
-                        });
-                    }).fail(function(error) {
+            $(".movie").click(function () {
+                movieId = $(this).data("id");
 
-                    });
-                }
+                $.ajax({
+                    url: `/Movies/GetMovie?id=${movieId}`,
+                    type: "GET",
+                    contentType: "application/json"
+                }).done(function (result) {
+                    $("#movie-modal").find(".modal-title").text(result["title"]);
+                    $("#movie-poster").attr("src", result["poster_path"]);
+                    $("#movie-original-title").text(result["original_title"]);
+                    $("#movie-overview").text(result["overview"]);
+                    $("#movie-vote-average").text(result["vote_average"]);
+
+                    if (result["isFavorite"]) {
+                        $("#remove-favorite").removeClass("d-none");
+                        $("#add-favorite").addClass("d-none");
+                    } else {
+                        $("#add-favorite").removeClass("d-none");
+                        $("#remove-favorite").addClass("d-none");
+                    }
+                    $("#movie-modal").modal("show");
+                }).fail(function () {
+                    alert("An unexpected error has occurred.");
+                });
             });
 
-            $(".sortable-header").click(function () {
+            $("#remove-favorite").click(function () {
+                $.ajax({
+                    url: `/Movies/RemoveFavorite?id=${movieId}`,
+                    type: "POST",
+                    contentType: "application/json"
+                }).done(function () {
+                    $("#remove-favorite").addClass("d-none");
+                    $("#add-favorite").removeClass("d-none");
+                }).fail(function () {
+                    alert("An unexpected error has occurred.");
+                });
+            });
 
-
-                $(".sorting-arrows").removeClass("fa-sort-up").removeClass("fa-sort-down").addClass("fa-sort");
-
-            })
+            $("#add-favorite").click(function () {
+                $.ajax({
+                    url: `/Movies/AddFavorite?id=${movieId}`,
+                    type: "POST",
+                    contentType: "application/json"
+                }).done(function () {
+                    $("#remove-favorite").removeClass("d-none");
+                    $("#add-favorite").addClass("d-none");
+                }).fail(function () {
+                    alert("An unexpected error has occurred.");
+                });
+            });
         });
-
-        function getMovies(page) {
-            $.ajax({
-                method: "GET",
-                url: `/Movies/GetMovies${(page ? `/page=${page}` : "")}`,
-                contentType: "data/json"
-            }).done(function(data) {
-
-                //moviesTable.rows().remove();
-
-                //data.results.forEach(function(movie) {
-                //    moviesTable.row.add([movie.title,movie.releaseDateString,movie.vote_average]);
-                //});
-
-            }).fail(function() {
-                alert("Change to toastr.");
-            });
-        }
-
     </script>
 }
